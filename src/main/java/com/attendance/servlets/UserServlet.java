@@ -4,7 +4,7 @@ import com.attendance.model.User;
 import com.attendance.model.DBUtil;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.WebServlet;
+import javax.servlet.annotation.WebServlet;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
