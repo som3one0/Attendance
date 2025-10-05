@@ -1,7 +1,7 @@
 package com.attendance.servlets;
 
 import com.attendance.model.User;
-import com.attendance.util.DBUtil;
+import com.attendance.model.DBUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
