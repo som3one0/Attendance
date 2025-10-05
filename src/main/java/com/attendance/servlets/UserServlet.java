@@ -1,7 +1,7 @@
 package com.attendance.servlets;
 
 import com.attendance.model.*;
-import com.attendance.util.*;
+import com.attendance.model.*;
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
