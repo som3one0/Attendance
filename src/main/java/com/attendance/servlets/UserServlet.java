@@ -1,10 +1,9 @@
 package com.attendance.servlets;
 
-import com.attendance.model.User;
-import com.attendance.model.DBUtil;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.attendance.model.*;
+import com.attendance.util.*;
+import javax.servlet.http.*;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import java.io.IOException;
 import java.sql.*;
@@ -17,7 +16,7 @@ public class UserServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<User> users = new ArrayList<>();
+        List users = new ArrayList<>();
         
         try (Connection conn = DBUtil.getConnection()) {
             String sql = "SELECT * FROM users";
@@ -36,6 +35,6 @@ public class UserServlet extends HttpServlet {
         }
         
         request.setAttribute("users", users);
-        request.getRequestDispatcher("/users.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/users.jsp").forward(request, response);
     }
 }
