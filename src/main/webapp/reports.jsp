@@ -1,27 +1,203 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%
-    // Session security check
-    if (session.getAttribute("userId") == null) {
-        response.sendRedirect("index.html");
-        return;
-    }
-%>
+<%@ page language="java" contenteditable="application/x-httpd-php" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Reports</title>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <title>Attendance Reports - Cyberpunk Style</title>
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        /* Local styles for reports page */
-        :root{--bg:#f6f8fa;--card:#fff;--muted:#6b7280;--accent:#2563eb}
-        body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:var(--bg)}
-        .container{max-width:1200px;margin:0 auto;padding:20px}
-        header{background:var(--card);padding:15px 20px;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:20px}
-        h1{margin:0;font-size:24px;color:#111}
-        .card{background:var(--card);padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:20px}
+        /* Cyberpunk neon styles */
+        .cyber-reports-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .neon-glass-card {
+            background: rgba(10, 10, 30, 0.7);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5),
+                        inset 0 0 20px rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .neon-title {
+            font-size: 2.5em;
+            text-align: center;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff,
+                         0 0 20px #00ffff,
+                         0 0 30px #00ffff;
+            margin-bottom: 30px;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 3px;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(20, 20, 50, 0.6);
+            border: 1px solid #ff00ff;
+            border-radius: 10px;
+        }
+
+        .filter-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .neon-button {
+            padding: 12px 30px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            color: #00ffff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .neon-button:hover {
+            background: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 20px #00ffff;
+            transform: translateY(-2px);
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+        }
+
+        .records-table thead {
+            background: rgba(0, 255, 255, 0.2);
+        }
+
+        .records-table th {
+            padding: 15px;
+            text-align: left;
+            color: #00ffff;
+            border: 1px solid #00ffff;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .records-table td {
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #00ffff;
+        }
+
+        /* Zebra stripe rows with neon effect */
+        .records-table tbody tr:nth-child(odd) {
+            background: rgba(255, 0, 255, 0.1);
+        }
+
+        .records-table tbody tr:nth-child(even) {
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .records-table tbody tr:hover {
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #ff00ff;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        /* Digital-style time display using CSS */
+        .digital-time::before {
+            content: attr(data-time);
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-reports-container">
+        <h1 class="neon-title">◢ ATTENDANCE RECORDS ◣</h1>
+        
+        <div class="neon-glass-card">
+            <!-- Filter Section -->
+            <form method="get" action="reports" class="filter-section">
+                <input type="text" name="username" placeholder="USERNAME" 
+                       value="${param.username}" class="filter-input">
+                <input type="text" name="department" placeholder="DEPARTMENT" 
+                       value="${param.department}" class="filter-input">
+                <input type="date" name="startDate" 
+                       value="${param.startDate}" class="filter-input">
+                <input type="date" name="endDate" 
+                       value="${param.endDate}" class="filter-input">
+                <button type="submit" class="neon-button">⚡ FILTER</button>
+                <button type="button" onclick="window.location.href='reports'" 
+                        class="neon-button">↻ RESET</button>
+            </form>
+
+            <!-- Records Table -->
+            <c:choose>
+                <c:when test="${not empty records}">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>USERNAME</th>
+                                <th>DEPARTMENT</th>
+                                <th>DATE</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <c:forEach items="${records}" var="record">
+                                <tr>
+                                    <td><c:out value="${record.username}"/></td>
+                                    <td><c:out value="${record.department}"/></td>
+                                    <td><c:out value="${record.date}"/></td>
+                                    <td><c:out value="${record.status}"/></td>
+                                </tr>
+                            </c:forEach>
+                        </tbody>
+                    </table>
+                </c:when>
+                <c:otherwise>
+                    <div class="no-data">
+                        ⚠ NO ATTENDANCE RECORDS FOUND ⚠<br>
+                        Please apply filters or check your database.
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </div>
+</body>
+</html>--card);padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:20px}
         .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px}
         .form-group{display:flex;flex-direction:column}
         label{font-size:14px;font-weight:500;margin-bottom:5px;color:#374151}
