@@ -2,11 +2,15 @@
 <%@ page import="javax.servlet.http.HttpSession" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%
-    if(session == null || session.getAttribute("username") == null || !"admin".equals(session.getAttribute("role"))) {
+    if (session == null || session.getAttribute("userId") == null) {
         response.sendRedirect("index.jsp");
         return;
     }
-    String username = (String) session.getAttribute("username");
+    String userRole = (String) session.getAttribute("userRole");
+    if (!"admin".equals(userRole)) {
+        response.sendRedirect("user-dashboard.jsp");
+        return;
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,17 +19,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Attendance System</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+</head>
+<body class="futuristic-bg">
+    <!-- Sidebar -->
+    <div class="sidebar-neon">
+        <div class="sidebar-logo">
+            <h2 class="digital-font">ADMIN PANEL</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="admin-dashboard.jsp" class="sidebar-link active">
+                <span class="icon">🏠</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="users.jsp" class="sidebar-link">
+                <span class="icon">👥</span>
+                <span>Users</span>
+            </a>
+            <a href="departments.jsp" class="sidebar-link">
+                <span class="icon">🏢</span>
+                <span>Departments</span>
+            </a>
+            <a href="reports.jsp" class="sidebar-link">
+                <span class="icon">📊</span>
+                <span>Reports</span>
+            </a>
+            <a href="logout" class="sidebar-link">
+                <span class="icon">🚪</span>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Top Bar -->
+        <header class="topbar-neon">
+            <h1 class="digital-font topbar-title">COMMAND CENTER</h1>
+            <div class="topbar-actions">
+                <button class="notification-btn">
+                    <span class="icon">🔔</span>
+                    <span class="badge">3</span>
+                </button>
+                <div class="user-dropdown">
+                    <button class="user-btn">
+                        <span class="icon">👤</span>
+                        <span><%= session.getAttribute("userName") %></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="dashboard-grid">
+            <div class="neon-card present-card">
+                <div class="card-header">
+                    <span class="card-icon">✓</span>
+                    <span class="card-label digital-font">PRESENT</span>
+                </div>
+                <div class="card-value" id="presentCount">0</div>
+                <div class="card-footer">Today's Attendance</div>
+            </div>
+
+            <div class="neon-card absent-card">
+                <div class="card-header">
+                    <span class="card-icon">✗</span>
+                    <span class="card-label digital-font">ABSENT</span>
+                </div>
+                <div class="card-value" id="absentCount">0</div>
+                <div class="card-footer">Marked Absent</div>
+            </div>
+
+            <div class="neon-card leave-card">
+                <div class="card-header">
+                    <span class="card-icon">☰</span>
+                    <span class="card-label digital-font">ON LEAVE</span>
+                </div>
+                <div class="card-value" id="leaveCount">0</div>
+                <div class="card-footer">Approved Leaves</div>
+            </div>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="chart-container-neon">
+            <div class="chart-header">
+                <h3 class="digital-font">ATTENDANCE ANALYTICS</h3>
+                <div class="chart-controls">
+                    <button class="chart-btn">7D</button>
+                    <button class="chart-btn active">30D</button>
+                    <button class="chart-btn">90D</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="attendanceChart"></canvas>
+                <div id="chartNoData" style="display:none;" class="no-data-message">
+                    NO DATA AVAILABLE
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Fetch summary data
+        (async function() {
+            try {
+                const res = await fetch('api/attendance/summary?date=' + new Date().toISOString().split('T')[0]);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('presentCount').textContent = data.present || 0;
+                    document.getElementById('absentCount').textContent = data.absent || 0;
+                    document.getElementById('leaveCount').textContent = data.leave || 0;
+                }
+            } catch (e) {
+                console.error('Failed to fetch summary', e);
+            }
+        })();
+
+        // Chart data
+        (async function() {
+            try {
+                const res = await fetch('api/attendance/chart?days=30');
+                const data = await res.json();
+                const ctx = document.getElementById('attendanceChart').getContext('2d');
+                
+                if (!data.dates || data.dates.length === 0) {
+                    document.getElementById('chartNoData').style.display = 'flex';
+                    return;
+                }
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.dates,
+                        datasets: [{
+                            label: 'Present',
+                            data: data.counts,
+                            backgroundColor: 'rgba(0, 255, 255, 0.6)',
+                            borderColor: 'rgba(0, 255, 255, 1)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#00ffff',
+                                    font: { family: 'monospace' }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#00ffff' },
+                                grid: { color: 'rgba(0, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#00ffff' },
+                                grid: { color: 'rgba(0, 255, 255, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Failed to fetch chart data', e);
+                document.getElementById('chartNoData').style.display = 'flex';
+            }
+        })();
+    </script>
+</body>
+</html>       min-height: 100vh;
         }
         
         .dashboard-container {
